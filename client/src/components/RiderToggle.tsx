@@ -107,7 +107,11 @@ export const RiderToggle: React.FC<RiderToggleProps> = ({ onSharingChange }) => 
           'You are outside OAU campus. Sharing works only inside OAU territory.'
         );
       } else if (response.status === 422 && payload.error === 'low_accuracy') {
-        setStatus('GPS signal is not precise enough yet. Move outdoors and wait.');
+        setStatus(
+          fix.accuracy !== null
+            ? `GPS ±${fix.accuracy} m — waiting for ≤${MAX_ACCURACY_METERS} m`
+            : 'GPS signal is not precise enough yet. Move outdoors and wait.'
+        );
       } else {
         setStatus('Connection issue — retrying.');
       }
@@ -133,13 +137,6 @@ export const RiderToggle: React.FC<RiderToggleProps> = ({ onSharingChange }) => 
         ? Math.round(rawAccuracy)
         : null;
 
-    // Do not put a fuzzy position on the map. Keep watching until the GPS
-    // reports a tight enough fix.
-    if (accuracyMeters !== null && accuracyMeters > MAX_ACCURACY_METERS) {
-      setStatus(`Getting a precise GPS fix… ±${accuracyMeters} m`);
-      return;
-    }
-
     let speedKmh = 0;
 
     if (rawSpeed !== null && !Number.isNaN(rawSpeed)) {
@@ -162,17 +159,31 @@ export const RiderToggle: React.FC<RiderToggleProps> = ({ onSharingChange }) => 
       accuracy: accuracyMeters
     };
 
-    lastFixRef.current = { ...fix, timestamp: now };
+    // Send every fix for boundary validation, even a fuzzy one. The server
+    // checks OAU first, so someone outside campus gets an immediate answer
+    // instead of waiting forever for a tighter GPS fix.
     setSpeed(speedKmh);
-    setStatus('Sending your precise location…');
+    setStatus(
+      accuracyMeters !== null && accuracyMeters > MAX_ACCURACY_METERS
+        ? `GPS ±${accuracyMeters} m — waiting for ≤${MAX_ACCURACY_METERS} m`
+        : 'Sending your precise location…'
+    );
     void sendPing(fix);
+
+    // Only remember fixes good enough to draw; the heartbeat must never
+    // keep re-sending a position the server already rejected as fuzzy.
+    if (accuracyMeters === null || accuracyMeters <= MAX_ACCURACY_METERS) {
+      lastFixRef.current = { ...fix, timestamp: now };
+    }
   };
 
   const handleError = (error: GeolocationPositionError) => {
     if (error.code === error.PERMISSION_DENIED) {
       stopSharing('Location permission denied. Allow access and try again.');
     } else if (error.code === error.TIMEOUT) {
-      setStatus('Still looking for GPS… move outdoors for a better signal.');
+      setStatus(
+        'No GPS fix yet. Move outdoors and use HTTPS if you are on a phone.'
+      );
     } else {
       setStatus('Waiting for GPS signal…');
     }

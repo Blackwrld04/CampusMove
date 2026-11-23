@@ -26,8 +26,8 @@ That is the whole product. There is intentionally nothing else on the map.
 | Piece | Behaviour |
 | --- | --- |
 | **Location source** | The browser's `navigator.geolocation.watchPosition` with `enableHighAccuracy: true` and `maximumAge: 0`. |
-| **Precision filter** | Client and server both require an accuracy of **50 m or better**. The client keeps watching until the GPS settles rather than showing a fuzzy dot. |
-| **OAU check** | Every ping is tested against a 94-point OpenStreetMap polygon of the OAU campus. Outside pings get `403 outside_oau`. |
+| **Precision filter** | Client and server both require an accuracy of **50 m or better**. Fuzzy fixes are sent only for the boundary check and are never stored or drawn. |
+| **OAU check** | Every fix — even a fuzzy one — is tested against a 94-point OpenStreetMap polygon of the OAU campus. Outside pings get `403 outside_oau` immediately, so the app never sits on “getting GPS fix” for someone outside campus. |
 | **Ping interval** | A ping is sent on every accepted GPS fix, plus a 5 s heartbeat so a stationary rider stays on the map. |
 | **Trail points** | The server appends a point only when the rider has moved at least **5 m** from the previous one, and keeps the latest **300** points. |
 | **Live feed** | `GET /api/stream` pushes the rider snapshot over SSE every **1.5 s**. |
@@ -114,7 +114,9 @@ Failure responses:
 | --- | --- | --- |
 | `400` | `riderId and valid lat/lng are required` | Missing or malformed coordinates. |
 | `403` | `outside_oau` | The position is outside the OAU campus polygon. |
-| `422` | `low_accuracy` | The GPS fix is fuzzier than 50 m, so it is not drawn. |
+| `422` | `low_accuracy` | The GPS fix is fuzzier than 50 m, so it is not stored or drawn. |
+
+The OAU boundary is checked before accuracy, so a position outside campus always returns `403 outside_oau` even when the fix is coarse.
 
 ### Rider snapshot
 
