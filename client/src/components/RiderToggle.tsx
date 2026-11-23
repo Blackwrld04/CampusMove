@@ -45,6 +45,7 @@ export const RiderToggle: React.FC<RiderToggleProps> = ({ onSharingChange }) => 
   const sendingRef = useRef(false);
   const lastFixRef = useRef<Fix | null>(null);
   const riderIdRef = useRef('');
+  const geoFailuresRef = useRef(0);
 
   const stopSharing = (message = '') => {
     if (watchIdRef.current !== null) {
@@ -68,6 +69,7 @@ export const RiderToggle: React.FC<RiderToggleProps> = ({ onSharingChange }) => 
 
     riderIdRef.current = '';
     lastFixRef.current = null;
+    geoFailuresRef.current = 0;
     setIsSharing(false);
     setIsLive(false);
     setSpeed(0);
@@ -123,6 +125,8 @@ export const RiderToggle: React.FC<RiderToggleProps> = ({ onSharingChange }) => 
   };
 
   const handlePosition = (position: GeolocationPosition) => {
+    geoFailuresRef.current = 0;
+
     const {
       latitude,
       longitude,
@@ -178,14 +182,30 @@ export const RiderToggle: React.FC<RiderToggleProps> = ({ onSharingChange }) => 
   };
 
   const handleError = (error: GeolocationPositionError) => {
+    console.warn('Geolocation error', error.code, error.message);
+
     if (error.code === error.PERMISSION_DENIED) {
       stopSharing('Location permission denied. Allow access and try again.');
-    } else if (error.code === error.TIMEOUT) {
+      return;
+    }
+
+    geoFailuresRef.current += 1;
+
+    // Do not spin forever when the device has no location source (common on
+    // laptops and VMs without GPS or Wi-Fi positioning).
+    if (geoFailuresRef.current >= 2) {
+      stopSharing(
+        'No location received. This device may not have GPS — try a phone with location enabled.'
+      );
+      return;
+    }
+
+    if (error.code === error.TIMEOUT) {
       setStatus(
         'No GPS fix yet. Move outdoors and use HTTPS if you are on a phone.'
       );
     } else {
-      setStatus('Waiting for GPS signal…');
+      setStatus('Location unavailable — retrying…');
     }
   };
 
@@ -198,6 +218,7 @@ export const RiderToggle: React.FC<RiderToggleProps> = ({ onSharingChange }) => 
     const riderId = 'rider-' + Math.random().toString(36).slice(2, 10);
     riderIdRef.current = riderId;
     lastFixRef.current = null;
+    geoFailuresRef.current = 0;
 
     setNotice('');
     setIsSharing(true);

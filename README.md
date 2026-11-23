@@ -205,6 +205,7 @@ campusmove/
 - **Trails are drawn from raw GPS.** There is no snapping to roads, so a noisy fix can make the line wobble; the 50 m accuracy filter keeps the worst fixes off the map.
 - **The OAU boundary is mapped from OpenStreetMap.** It follows the university polygon, so a position just outside the mapped perimeter is rejected even if it is physically on university land.
 - **Precision depends on the device.** A laptop using Wi-Fi positioning may never reach 50 m accuracy and will stay at “Getting a precise GPS fix”; a phone with GPS works best outdoors.
+- **Some devices have no location source at all.** A desktop, VM, or laptop without GPS and without a working browser location provider cannot share. After two failures the app stops and says “No location received” instead of waiting forever.
 - **No identity or moderation.** Each tap creates an anonymous random rider ID. Nothing prevents someone from spoofing a location inside campus.
 - **Network dependencies.** The UI styles and Leaflet CSS are bundled locally, but OpenStreetMap **tiles** still need internet. A fully offline deployment needs local tiles.
 - **HTTPS matters.** Browser geolocation requires a secure context; use `localhost` for development or serve over HTTPS on a phone.
