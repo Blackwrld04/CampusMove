@@ -5,11 +5,16 @@ import { Rider } from '../types';
 interface MapViewProps {
   riders: Rider[];
   focusRiderId: string | null;
+  previewRiderId: string | null;
 }
 
 const CAMPUS_CENTER: [number, number] = [7.5215, 4.5265];
 
-export const MapView: React.FC<MapViewProps> = ({ riders, focusRiderId }) => {
+export const MapView: React.FC<MapViewProps> = ({
+  riders,
+  focusRiderId,
+  previewRiderId
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
@@ -93,10 +98,13 @@ export const MapView: React.FC<MapViewProps> = ({ riders, focusRiderId }) => {
 
         marker = L.marker([rider.lat, rider.lng], { icon, keyboard: false })
           .addTo(map)
-          .bindTooltip('Sharing live', {
-            direction: 'top',
-            offset: [0, -14]
-          });
+          .bindTooltip(
+            rider.id === previewRiderId ? 'Preview only — not shared' : 'Sharing live',
+            {
+              direction: 'top',
+              offset: [0, -14]
+            }
+          );
         markersRef.current.set(rider.id, marker);
       }
     });
@@ -157,7 +165,7 @@ export const MapView: React.FC<MapViewProps> = ({ riders, focusRiderId }) => {
 
       hasFittedRef.current = true;
     }
-  }, [riders, focusRiderId]);
+  }, [riders, focusRiderId, previewRiderId]);
 
   return <div ref={containerRef} className="w-full h-full" />;
 };

@@ -3,9 +3,10 @@ import { Rider } from '../types';
 
 interface TopBarProps {
   riders: Rider[];
+  previewActive: boolean;
 }
 
-export const TopBar: React.FC<TopBarProps> = ({ riders }) => {
+export const TopBar: React.FC<TopBarProps> = ({ riders, previewActive }) => {
   const count = riders.length;
   const hasRiders = count > 0;
 
@@ -28,22 +29,37 @@ export const TopBar: React.FC<TopBarProps> = ({ riders }) => {
             >
               {hasRiders ? 'LIVE' : 'IDLE'}
             </span>
+            {previewActive && (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border bg-amber-950/80 border-amber-500/40 text-amber-300">
+                PREVIEW
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5 mt-0.5">
             <span
               className={`w-2 h-2 rounded-full ${
-                hasRiders ? 'bg-emerald-400 animate-ping' : 'bg-slate-500'
+                hasRiders
+                  ? 'bg-emerald-400 animate-ping'
+                  : previewActive
+                    ? 'bg-amber-400'
+                    : 'bg-slate-500'
               }`}
             ></span>
             <span
               className={`text-xs font-semibold ${
-                hasRiders ? 'text-emerald-400' : 'text-slate-400'
+                hasRiders
+                  ? 'text-emerald-400'
+                  : previewActive
+                    ? 'text-amber-300'
+                    : 'text-slate-400'
               }`}
             >
               {hasRiders
                 ? `${count} ${count === 1 ? 'rider' : 'riders'} sharing`
-                : 'No one is sharing'}
+                : previewActive
+                  ? 'Preview ride — not shared'
+                  : 'No one is sharing'}
             </span>
           </div>
         </div>

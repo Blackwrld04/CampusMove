@@ -15,6 +15,7 @@ A zero-login campus map for **Obafemi Awolowo University (OAU), Ile-Ife**. Tap o
 - **OAU campus only.** The server checks every ping against the real OAU campus boundary. A position outside the university is rejected and never appears on the map.
 - **Live for everyone.** All open maps update over SSE every 1.5 s.
 - **Stop anytime.** Tap `STOP` and your dot and trail disappear immediately.
+- **Local preview.** On a device without GPS, `Preview a sample ride (no GPS)` animates a green dot and trail on your own screen so you can see the design. It is labelled `PREVIEW`, never calls the API, and is never visible to anyone else.
 - **Real riders only.** No routes, stops, ETAs, bus numbers, queue reports, or seeded buses.
 
 That is the whole product. There is intentionally nothing else on the map.
@@ -59,6 +60,17 @@ Production build of the client:
 cd client
 npm run build
 ```
+
+### Preview ride (local only)
+
+If the device has no GPS — a laptop, a VM, or a browser without a working location provider — the empty map offers **Preview a sample ride (no GPS)**.
+
+- It animates a green dot along a 3.2 km road loop through the centre of campus, at 29 km/h, with the same emerald trail as a real rider.
+- The top bar shows a `PREVIEW` badge and the panel says **“Not shared — visible only on this screen.”**
+- It makes **no geolocation calls and no API requests**. The preview rider lives only in React state, so it never reaches the server, other users, or the trail store.
+- `STOP` clears the dot and trail immediately and returns the normal empty map.
+
+The route geometry is bundled in `client/src/previewRoute.ts` (generated once from OSRM/OpenStreetMap), so preview mode also works with no network beyond the map tiles. It is a design demo, not a way to fake a real location.
 
 ### Styling (no CDN)
 
@@ -185,14 +197,16 @@ campusmove/
     ├── index.html
     ├── tailwind.config.js
     └── src/
-        ├── App.tsx           # riders state, SSE, empty state, layout
+        ├── App.tsx           # riders state, SSE, empty state, preview ride
+        ├── previewRoute.ts   # bundled campus loop for the local preview
         ├── types.ts          # Rider and PathPoint types
         ├── index.css         # base styles, rider pulse, Leaflet overrides
         ├── tailwind.css      # Tailwind input directives
         ├── tailwind.generated.css  # committed, CDN-free utility build
         └── components/
             ├── MapView.tsx      # OSM map, green dots, trail polylines
-            ├── TopBar.tsx       # live rider count and IDLE/LIVE badge
+            ├── TopBar.tsx       # rider count and IDLE/LIVE/PREVIEW badges
+            ├── PreviewPanel.tsx # local-only preview panel and STOP
             └── RiderToggle.tsx  # geolocation watch, pings, stop sharing
 ```
 
